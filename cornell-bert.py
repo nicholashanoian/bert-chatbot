@@ -73,7 +73,7 @@ flags.DEFINE_string(
     "specified, we will attempt to automatically detect the GCE project from "
     "metadata.")
 
-flags.DEFINE_string("master", None, "[Optional] TensorFlow master URL.")
+# flags.DEFINE_string("master", None, "[Optional] TensorFlow master URL.")
 
 flags.DEFINE_integer(
     "num_tpu_cores", 8,
