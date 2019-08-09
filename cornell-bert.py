@@ -247,7 +247,36 @@ def model_fn_builder(vocab_list, learning_rate, num_train_steps,
 
         is_predicting = (mode == tf.estimator.ModeKeys.PREDICT)
 
-        # TRAIN and EVAL
+
+        tvars = tf.trainable_variables()
+        initialized_variable_names = {}
+        scaffold_fn = None
+        if init_checkpoint:
+            (assignment_map, initialized_variable_names
+            ) = modeling.get_assignment_map_from_checkpoint(tvars, init_checkpoint)
+            if use_tpu:
+
+                def tpu_scaffold():
+                    tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
+                    return tf.train.Scaffold()
+
+                scaffold_fn = tpu_scaffold
+            else:
+                tf.train.init_from_checkpoint(init_checkpoint, assignment_map)
+
+        tf.logging.info("**** Trainable Variables ****")
+        for var in tvars:
+            init_string = ""
+            if var.name in initialized_variable_names:
+                init_string = ", *INIT_FROM_CKPT*"
+            tf.logging.info("  name = %s, shape = %s%s", var.name, var.shape,
+                            init_string)
+
+        output_spec = None
+
+
+        
+        # TRAIN
         if not is_predicting:
 
             (loss, predictions, log_probs) = create_model(
@@ -257,9 +286,10 @@ def model_fn_builder(vocab_list, learning_rate, num_train_steps,
                 loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu=False)
 
             # if mode == tf.estimator.ModeKeys.TRAIN:
-            return tf.estimator.EstimatorSpec(mode=mode,
-                                              loss=loss,
-                                              train_op=train_op)
+            return tf.contrib.tpu.TPUEstimatorSpec(mode=mode,
+                                                   loss=loss,
+                                                   train_op=train_op,
+                                                   scaffold_fn=scaffold_fn)
             ## else:
                 # return tf.estimator.EstimatorSpec(mode=mode,
                 # loss=loss,
@@ -272,7 +302,7 @@ def model_fn_builder(vocab_list, learning_rate, num_train_steps,
                 'probabilities': log_probs,
                 'predictions': predictions
             }
-            return tf.estimator.EstimatorSpec(mode, predictions=predictions)
+            return tf.contrib.tpu.TPUEstimatorSpec(mode, predictions=predictions, scaffold_fn=scaffold_fn)
 
     # Return the actual model function in the closure
     return model_fn
