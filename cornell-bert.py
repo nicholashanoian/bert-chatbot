@@ -51,6 +51,12 @@ flags.DEFINE_integer("iterations_per_loop", 1000,
 
 
 
+
+flags.DEFINE_string(
+    "init_checkpoint", None,
+    "Initial checkpoint (usually from a pre-trained BERT model).")
+
+
 # tpu parameters
 
 # flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
@@ -233,7 +239,7 @@ def create_model(is_predicting, input_ids, input_mask, segment_ids, vocab, vocab
 # model_fn_builder actually creates our model function
 # using the passed parameters for num_labels, learning_rate, etc.
 def model_fn_builder(vocab_list, learning_rate, num_train_steps,
-                     num_warmup_steps):
+                     num_warmup_steps, init_checkpoint, use_tpu):
     """Returns `model_fn` closure for TPUEstimator."""
     def model_fn(features, mode, params):  # pylint: disable=unused-argument
         """The `model_fn` for TPUEstimator."""
@@ -384,7 +390,9 @@ def main(_):
         vocab_list=[v for k,v in tokenizer.vocab.items()],
         learning_rate=LEARNING_RATE,
         num_train_steps=num_train_steps,
-        num_warmup_steps=num_warmup_steps)
+        num_warmup_steps=num_warmup_steps,
+        init_checkpoint=FLAGS.init_checkpoint,
+        use_tpu=FLAGS.use_tpu)
 
     estimator = tf.estimator.Estimator(
         model_fn=model_fn,
