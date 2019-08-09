@@ -55,11 +55,11 @@ flags.DEFINE_integer("iterations_per_loop", 1000,
 
 # flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
 
-# flags.DEFINE_string(
-#     "tpu_name", None,
-#     "The Cloud TPU to use for training. This should be either the name "
-#     "used when creating the Cloud TPU, or a grpc://ip.address.of.tpu:8470 "
-#     "url.")
+flags.DEFINE_string(
+    "tpu_name", None,
+    "The Cloud TPU to use for training. This should be either the name "
+    "used when creating the Cloud TPU, or a grpc://ip.address.of.tpu:8470 "
+    "url.")
 
 # flags.DEFINE_string(
 #     "tpu_zone", None,
@@ -371,7 +371,7 @@ def main(_):
             seq_length=MAX_SEQ_LENGTH)
 
         # train the model
-        print(f'Beginning Training!')
+        print('Beginning Training!')
         current_time = datetime.now()
         estimator.train(input_fn=train_input_fn, max_steps=num_train_steps)
         print("Training took time ", datetime.now() - current_time)
@@ -379,8 +379,6 @@ def main(_):
     if FLAGS.do_predict:
         def getPrediction(in_sentences):
             unique_id=100
-            labels = ["Negative", "Positive"]
-            #input_examples = [extract_features.InputExample(guid="", text_a = x, text_b = None) for x in in_sentences] # here, "" is just a dummy label
             input_examples = [
                 bert.extract_features.InputExample(unique_id=unique_id, text_a=x, text_b = "")
                 for x in in_sentences]
