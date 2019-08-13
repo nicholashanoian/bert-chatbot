@@ -18,72 +18,92 @@ import bert
 from bert import optimization
 from bert import tokenization
 from bert import extract_features
+from bert import modeling
 
 
 BERT_MODEL_HUB = "https://tfhub.dev/google/bert_uncased_L-12_H-768_A-12/1"
 
+class DummyFlags():
+    def __init__(self):
+        BERT_BASE_DIR='wwm_uncased_L-24_H-1024_A-16'
+        self.data_dir='.'
+        self.output_dir='out3'
+        self.do_train=True
+        self.do_train=True
+        self.do_predict=True
+        self.init_checkpoint=BERT_BASE_DIR + '/bert_model.ckpt'
+        self.bert_config_file=BERT_BASE_DIR + '/bert_config.json'
+        self.use_tpu=False
+        self.master=None
+        self.iterations_per_loop=1000
+        self.num_tpu_cores=4
+
+    
 
 
-flags = tf.flags
-FLAGS = flags.FLAGS
+
+# flags = tf.flags
+# FLAGS = flags.FLAGS
+
+FLAGS = DummyFlags()
 
 ## Required parameters
-flags.DEFINE_string(
-    "data_dir", None,
-    "The input data dir. Should contain the .tsv files (or other data files) "
-    "for the task.")
+# flags.DEFINE_string(
+#     "data_dir", None,
+#     "The input data dir. Should contain the .tsv files (or other data files) "
+#     "for the task.")
 
-flags.DEFINE_string(
-    "output_dir", None,
-    "The output directory where the model checkpoints will be written.")
-
-
-flags.DEFINE_bool("do_train", False, "Whether to run training.")
-
-flags.DEFINE_bool(
-    "do_predict", False,
-    "Whether to run the model in inference mode on the test set.")
+# flags.DEFINE_string(
+#     "output_dir", None,
+#     "The output directory where the model checkpoints will be written.")
 
 
+# flags.DEFINE_bool("do_train", False, "Whether to run training.")
 
-flags.DEFINE_integer("iterations_per_loop", 1000,
-                     "How many steps to make in each estimator call.")
+# flags.DEFINE_bool(
+#     "do_predict", False,
+#     "Whether to run the model in inference mode on the test set.")
 
 
 
-
-flags.DEFINE_string(
-    "init_checkpoint", None,
-    "Initial checkpoint (usually from a pre-trained BERT model).")
+# flags.DEFINE_integer("iterations_per_loop", 1000,
+#                      "How many steps to make in each estimator call.")
 
 
-# tpu parameters
 
-# flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
 
-flags.DEFINE_string(
-    "tpu_name", None,
-    "The Cloud TPU to use for training. This should be either the name "
-    "used when creating the Cloud TPU, or a grpc://ip.address.of.tpu:8470 "
-    "url.")
+# # flags.DEFINE_string(
+#     # "init_checkpoint", None,
+#     # "Initial checkpoint (usually from a pre-trained BERT model).")
 
-flags.DEFINE_string(
-    "tpu_zone", None,
-    "[Optional] GCE zone where the Cloud TPU is located in. If not "
-    "specified, we will attempt to automatically detect the GCE project from "
-    "metadata.")
 
-flags.DEFINE_string(
-    "gcp_project", None,
-    "[Optional] Project name for the Cloud TPU-enabled project. If not "
-    "specified, we will attempt to automatically detect the GCE project from "
-    "metadata.")
+# # tpu parameters
 
-# flags.DEFINE_string("master", None, "[Optional] TensorFlow master URL.")
+# # flags.DEFINE_bool("use_tpu", False, "Whether to use TPU or GPU/CPU.")
 
-# flags.DEFINE_integer(
-    # "num_tpu_cores", 8,
-    # "Only used if `use_tpu` is True. Total number of TPU cores to use.")
+# flags.DEFINE_string(
+#     "tpu_name", None,
+#     "The Cloud TPU to use for training. This should be either the name "
+#     "used when creating the Cloud TPU, or a grpc://ip.address.of.tpu:8470 "
+#     "url.")
+
+# flags.DEFINE_string(
+#     "tpu_zone", None,
+#     "[Optional] GCE zone where the Cloud TPU is located in. If not "
+#     "specified, we will attempt to automatically detect the GCE project from "
+#     "metadata.")
+
+# flags.DEFINE_string(
+#     "gcp_project", None,
+#     "[Optional] Project name for the Cloud TPU-enabled project. If not "
+#     "specified, we will attempt to automatically detect the GCE project from "
+#     "metadata.")
+
+# # flags.DEFINE_string("master", None, "[Optional] TensorFlow master URL.")
+
+# # flags.DEFINE_integer(
+#     # "num_tpu_cores", 8,
+#     # "Only used if `use_tpu` is True. Total number of TPU cores to use.")
 
 
 
@@ -173,27 +193,41 @@ def create_tokenizer_from_hub_module(bert_model_hub):
 # 
 # Now that we've prepared our data, let's focus on building a model. `create_model` does just this below. First, it loads the BERT tf hub module again (this time to extract the computation graph). Next, it creates a single new layer that will be trained to adapt BERT to our sentiment task (i.e. classifying whether a movie review is positive or negative). This strategy of using a mostly trained model is called [fine-tuning](http://wiki.fast.ai/index.php/Fine_tuning).
 
-def create_model(is_predicting, input_ids, input_mask, segment_ids, vocab, vocab_size):
+def create_model(is_predicting, input_ids, input_mask, segment_ids, vocab, vocab_size, bert_config, use_one_hot_embeddings):
     """Creates a classification model."""
 
-    bert_module = hub.Module(
-        BERT_MODEL_HUB,
-        trainable=True)
+    # bert_module = hub.Module(
+    #     BERT_MODEL_HUB,
+    #     trainable=True)
     
-    bert_inputs = dict(
-        input_ids=input_ids,
-        input_mask=input_mask,
-        segment_ids=segment_ids)
+    # bert_inputs = dict(
+    #     input_ids=input_ids,
+    #     input_mask=input_mask,
+    #     segment_ids=segment_ids)
 
-    bert_outputs = bert_module(
-        inputs=bert_inputs,
-        signature="tokens",
-        as_dict=True)
+    # bert_outputs = bert_module(
+    #     inputs=bert_inputs,
+    #     signature="tokens",
+    #     as_dict=True)
 
     # Use "pooled_output" for classification tasks on an entire sentence.
     # Use "sequence_output" for token-level output.
-    output_layer = bert_outputs["sequence_output"]
+    # output_layer = bert_outputs["sequence_output"]
     
+
+    model = modeling.BertModel(
+        config=bert_config,
+        is_training=not is_predicting,
+        input_ids=input_ids,
+        input_mask=input_mask,
+        token_type_ids=segment_ids,
+        use_one_hot_embeddings=use_one_hot_embeddings
+    )
+
+    output_layer = model.get_sequence_output()
+
+
+
     batch_size = output_layer.shape[0]
     max_seq_length = output_layer.shape[1]
     hidden_size = output_layer.shape[2]
@@ -239,7 +273,7 @@ def create_model(is_predicting, input_ids, input_mask, segment_ids, vocab, vocab
 # model_fn_builder actually creates our model function
 # using the passed parameters for num_labels, learning_rate, etc.
 def model_fn_builder(vocab_list, learning_rate, num_train_steps,
-                     num_warmup_steps, init_checkpoint, use_tpu):
+                     num_warmup_steps, init_checkpoint, use_tpu, use_one_hot_embeddings, bert_config):
     """Returns `model_fn` closure for TPUEstimator."""
     def model_fn(features, mode, params):  # pylint: disable=unused-argument
         """The `model_fn` for TPUEstimator."""
@@ -286,13 +320,13 @@ def model_fn_builder(vocab_list, learning_rate, num_train_steps,
         if not is_predicting:
 
             (loss, predictions, log_probs) = create_model(
-                is_predicting, input_ids, input_mask, segment_ids, vocab, vocab_size)
+                is_predicting, input_ids, input_mask, segment_ids, vocab, vocab_size, bert_config, use_one_hot_embeddings)
 
             train_op = bert.optimization.create_optimizer(
                 loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu=False)
 
             # if mode == tf.estimator.ModeKeys.TRAIN:
-            return tf.contrib.tpu.TPUEstimatorSpec(mode=mode,
+            output_spec = tf.contrib.tpu.TPUEstimatorSpec(mode=mode,
                                                    loss=loss,
                                                    train_op=train_op,
                                                    scaffold_fn=scaffold_fn)
@@ -302,14 +336,15 @@ def model_fn_builder(vocab_list, learning_rate, num_train_steps,
                 # eval_metric_ops=eval_metrics)
         else:
             (predictions, log_probs) = create_model(
-                is_predicting, input_ids, input_mask, segment_ids, vocab, vocab_size)
+                is_predicting, input_ids, input_mask, segment_ids, vocab, vocab_size, bert_config, use_one_hot_embeddings)
 
             predictions = {
                 'probabilities': log_probs,
                 'predictions': predictions
             }
-            return tf.contrib.tpu.TPUEstimatorSpec(mode, predictions=predictions, scaffold_fn=scaffold_fn)
+            output_spec = tf.contrib.tpu.TPUEstimatorSpec(mode, predictions=predictions, scaffold_fn=scaffold_fn)
 
+        return output_spec if use_tpu else output_spec.as_estimator_spec()
     # Return the actual model function in the closure
     return model_fn
 
@@ -321,6 +356,8 @@ def main(_):
     tf.logging.set_verbosity(tf.logging.INFO)
     if not FLAGS.do_train and not FLAGS.do_predict:
         raise ValueError("At least one of `do_train` or `do_eval` must be True.")
+
+    bert_config = modeling.BertConfig.from_json_file(FLAGS.bert_config_file)
 
 
     # create output dir
@@ -334,7 +371,7 @@ def main(_):
 
 
 
-    MAX_SEQ_LENGTH = 128
+    MAX_SEQ_LENGTH = 64
     # Compute train and warmup steps from batch size
     # These hyperparameters are copied from this colab notebook (https://colab.sandbox.google.com/github/tensorflow/tpu/blob/master/tools/colab/bert_finetuning_with_cloud_tpus.ipynb)
     BATCH_SIZE = 4
@@ -392,7 +429,9 @@ def main(_):
         num_train_steps=num_train_steps,
         num_warmup_steps=num_warmup_steps,
         init_checkpoint=FLAGS.init_checkpoint,
-        use_tpu=FLAGS.use_tpu)
+        use_tpu=FLAGS.use_tpu,
+        use_one_hot_embeddings=FLAGS.use_tpu,
+        bert_config=bert_config)
 
     estimator = tf.estimator.Estimator(
         model_fn=model_fn,
@@ -442,6 +481,6 @@ def main(_):
 
 
 if __name__ == "__main__":
-    flags.mark_flag_as_required("data_dir")
-    flags.mark_flag_as_required("output_dir")
+    # flags.mark_flag_as_required("data_dir")
+    # flags.mark_flag_as_required("output_dir")
     tf.app.run()
