@@ -25,7 +25,7 @@ BERT_MODEL_HUB = "https://tfhub.dev/google/bert_uncased_L-12_H-768_A-12/1"
 
 class DummyFlags():
     def __init__(self):
-        BERT_BASE_DIR='wwm_uncased_L-24_H-1024_A-16'
+        BERT_BASE_DIR='gs://cloud-tpu-checkpoints/bert/uncased_L-12_H-768_A-12'
         self.data_dir='.'
         self.output_dir='out3'
         self.do_train=True
@@ -33,10 +33,11 @@ class DummyFlags():
         self.do_predict=True
         self.init_checkpoint=BERT_BASE_DIR + '/bert_model.ckpt'
         self.bert_config_file=BERT_BASE_DIR + '/bert_config.json'
-        self.use_tpu=False
+        self.use_tpu=True
+        self.tpu_name=TPU_WORKER
         self.master=None
         self.iterations_per_loop=1000
-        self.num_tpu_cores=4
+        self.num_tpu_cores=8
 
     
 
@@ -323,7 +324,7 @@ def model_fn_builder(vocab_list, learning_rate, num_train_steps,
                 is_predicting, input_ids, input_mask, segment_ids, vocab, vocab_size, bert_config, use_one_hot_embeddings)
 
             train_op = bert.optimization.create_optimizer(
-                loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu=False)
+                loss, learning_rate, num_train_steps, num_warmup_steps, use_tpu=FLAGS.use_tpu)
 
             # if mode == tf.estimator.ModeKeys.TRAIN:
             output_spec = tf.contrib.tpu.TPUEstimatorSpec(mode=mode,
